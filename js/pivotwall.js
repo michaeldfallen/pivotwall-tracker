@@ -127,6 +127,11 @@ function getQueryVariable(variable) {
 }.call(this));
 
 (function() {
-  var project = new window.Pivotwall.Project(getQueryVariable("project_id"));
+  var key = getQueryVariable("pivotal_key")
+  var id = getQueryVariable("project_id")
+  if (key && id) {
+    var project = new window.Pivotwall.Project(id);
+  }
 //  project.onStart();
 }.call(this));
+
