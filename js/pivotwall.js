@@ -118,7 +118,17 @@ function getQueryVariable(variable) {
     this.$data = storyData;
   };
   Story.prototype.render = function(target) {
-    target.append("<p>" + this.$data.name + "<p>");
+    target.append(this.card());
+  };
+  Story.prototype.card = function() {
+    var newHtml = '' +
+      '<div class="card ' + this.$data.current_state + " " + this.$data.story_type + '">' +
+        //this.$data.name +
+        '<span class="name">' + this.$data.name + '</span>' +
+        '<span class="type">' + this.$data.story_type + '</span>' +
+        '<span class="state">' + this.$data.current_state + '</span>' +
+      '</div>';
+    return newHtml;
   };
   
   Pivotwall.Project = Project;
