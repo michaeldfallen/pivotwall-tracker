@@ -10,6 +10,8 @@ window.Pivotwall = {};
       Project,
       Stories,
       Story,
+      Users,
+      User,
       Base;
 
   Pivotwall.getQueryVariable = function(variable) {
@@ -46,6 +48,7 @@ window.Pivotwall = {};
     };
 
     this.$renderTarget = '#cards';
+    this.$users;
     this.$started;
     this.$finished;
     this.$rejected;
@@ -74,16 +77,16 @@ window.Pivotwall = {};
     $(this.$renderTarget).html("");
 
     if (this.$rejected !== undefined) {
-      this.$rejected.render();
+      this.$rejected.render(this.$users);
     };
     if (this.$delivered !== undefined) {
-      this.$delivered.render();
+      this.$delivered.render(this.$users);
     };
     if (this.$finished !== undefined) {
-      this.$finished.render();
+      this.$finished.render(this.$users);
     };
     if (this.$started !== undefined) {
-      this.$started.render();
+      this.$started.render(this.$users);
     };
   };
   Project.prototype.update = function() {
@@ -98,6 +101,9 @@ window.Pivotwall = {};
     };
     if (this.$started !== undefined) {
       this.$started.fetch();
+    };
+    if (this.$users !== undefined) {
+      this.$users.fetch();
     };
   };
   Project.prototype.fetch = function() {
@@ -114,6 +120,7 @@ window.Pivotwall = {};
         _this.$finished = new Pivotwall.Stories(_this, "finished", _this.$renderTarget);
         _this.$delivered = new Pivotwall.Stories(_this, "delivered", _this.$renderTarget);
         _this.$rejected = new Pivotwall.Stories(_this, "rejected", _this.$renderTarget);
+        _this.$users = new Pivotwall.Users(_this);
       }
     });
   };
@@ -142,11 +149,11 @@ window.Pivotwall = {};
       }
     });
   };
-  Stories.prototype.render = function() {
+  Stories.prototype.render = function(users) {
     var _this = this;
     if (_this.$stories !== undefined) {
       $.map(_this.$stories, function(item, idx) {
-        item.render(_this.$renderTarget);
+        item.render(_this.$renderTarget, users);
       });
     };
   };
@@ -155,10 +162,18 @@ window.Pivotwall = {};
   Story = function(storyData) {
     this.$data = storyData;
   };
-  Story.prototype.render = function(target) {
-    $(target).append(this.card());
+  Story.prototype.render = function(target, users) {
+    $(target).append(this.card(users));
   };
-  Story.prototype.card = function() {
+  Story.prototype.card = function(users) {
+    var owners;
+    if (users !== undefined) {
+      owners = $.map(this.$data.owner_ids, function(item, idx) {
+        var user = users.get(item);
+        if (user) { return user.avatar(); } else { return ""; };
+      });
+    }
+
     var classes = this.$data.current_state + " " + this.$data.story_type;
     var newHtml = '' +
       '<div class="card ' + classes + '">' +
@@ -166,14 +181,61 @@ window.Pivotwall = {};
         '<span class="name">' + this.$data.name + '</span>' +
         '<span class="type">' + this.$data.story_type + '</span>' +
         '<span class="state">' + this.$data.current_state + '</span>' +
+        '<span class="owners">' + owners.join("") + '</span>' +
       '</div>';
     return newHtml;
   };
 
 
+  Users = function(project) {
+    Base.apply(this, [project.$projectId, project.$pivotalKey]);
+    this.$users;
+  };
+  Users.prototype.fetch = function() {
+    var _this = this;
+
+    $.ajax({
+      url: "https://www.pivotaltracker.com/services/v5/projects/" +
+        _this.$projectId + "/memberships",
+      headers: {
+        "X-TrackerToken" : _this.$pivotalKey
+      },
+      success: function(data) {
+        _this.$users = $.map(data, function(item, idx) {
+          return new Pivotwall.User(item);
+        });
+      }
+    });
+  };
+  Users.prototype.get = function(id) {
+    if (id === undefined || this.$users === undefined) {
+      return false;
+    };
+    var foundUsers = $.grep(this.$users, function(user) {
+      return user.$data.person.id == id
+    });
+    if (foundUsers.length === 0) {
+      return false;
+    };
+    return foundUsers[0];
+  };
+
+
+  User = function(userData) {
+    this.$data = userData;
+  };
+  User.prototype.render = function(target) {
+    $(target).append(this.avatar());
+  };
+  User.prototype.avatar = function() {
+    return '<span class"owner">' + this.$data.person.name + '</span>';
+  };
+
   Pivotwall.Project = Project;
   Pivotwall.Story = Story;
   Pivotwall.Stories = Stories;
+  Pivotwall.Users = Users;
+  Pivotwall.User = User;
 }.call(this));
 
 $(document).ready(function() {
