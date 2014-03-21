@@ -28,6 +28,7 @@ window.Pivotwall = {};
 
   Pivotwall.hideUsage = function() {
     $('#usage').hide();
+    $('#demo').hide();
   };
 
 
