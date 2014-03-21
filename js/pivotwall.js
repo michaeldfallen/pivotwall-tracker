@@ -56,8 +56,8 @@ window.Pivotwall = {};
   };
   Project.prototype.schedule = function() {
     var _this = this;
-    var updateInterval = Pivotwall.getQueryVariable('update_interval') || 10;
-    var renderInterval = Pivotwall.getQueryVariable('render_interval') || 10;
+    var updateInterval = Pivotwall.getQueryVariable('update_interval') || 60;
+    var renderInterval = Pivotwall.getQueryVariable('render_interval') || 60;
 
     _this.fetch();
     _this.render();
