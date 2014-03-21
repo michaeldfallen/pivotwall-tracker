@@ -47,6 +47,17 @@ h1 {
   left: 0;
   color: #fff;
   opacity: 0.3;
+  z-index: 2;
+}
+
+h1 .brag {
+  font-weight: normal;
+  font-size: 0.25em;
+}
+
+a {
+  color:#3498db;
+  text-decoration: none;
 }
 
 h2 {
