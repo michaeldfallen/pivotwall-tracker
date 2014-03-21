@@ -145,7 +145,7 @@ input {
   left: 0.2em;
   font-weight: bolder;
   font-size: 1.5em;
-  opacity: 0.3;
+  opacity: 0.4;
 }
 
 .card .owners {
@@ -171,9 +171,9 @@ input {
 }
 
 .card.rejected {
-  background-color: #601d16;
+  background-color: #742119;
 }
 
 .card.delivered {
-  background-color: #7e3200;
+  background-color: #a3690b;
 }
