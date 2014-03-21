@@ -8,21 +8,23 @@
   <body>
     <h1>Pivotwall Tracker</h1>
     <div id="usage">
-      <p>
-        Required query params:
-      </p>
-        <ul>
-          <li>pivotal_key - pivotal tracker api key for a user that has access to the project you want to display</li>
-          <li>project_id - the project id of the project you want to display</li>
-        </ul>
-      </p>
+      <div class="help-form">
+        <form>
+          <label for="pivotal_key">
+            Pivotal Key
+          </label>
+          <input type="text" name="pivotal_key"/>
+
+          <label for="project_id">
+            Project Id
+          </label>
+          <input type="text" name="project_id"/>
+
+          <input type="submit" class="submit" value="Start tracking"/>
+        </form>
+      </div>
     </div>
-    <div id="project-name"></div>
-    <div id="cards">
-      <div id="rejected"></div>
-      <div id="delivered"></div>
-      <div id="finished"></div>
-      <div id="started"></div>
-    </div>
+    <h2 id="project-name"></h2>
+    <div id="cards"></div>
   </body>
 </html>

@@ -1,18 +1,6 @@
 
 window.Pivotwall = {};
 
-function getQueryVariable(variable) {
-  var query = window.location.search.substring(1);
-  var vars = query.split("&");
-  for (var i=0;i<vars.length;i++) {
-    var pair = vars[i].split("=");
-    if(pair[0] == variable){
-      return pair[1];
-    };
-  };
-  return(false);
-};
-
 (function() {
   "use strict"
 
@@ -24,9 +12,26 @@ function getQueryVariable(variable) {
       Story,
       Base;
 
+  Pivotwall.getQueryVariable = function(variable) {
+    var query = window.location.search.substring(1);
+    var vars = query.split("&");
+    for (var i=0;i<vars.length;i++) {
+      var pair = vars[i].split("=");
+      if(pair[0] == variable){
+        return pair[1];
+      };
+    };
+    return(false);
+  };
 
-  Base = function() {
-    this.$pivotalKey = getQueryVariable("pivotal_key");
+  Pivotwall.hideUsage = function() {
+    $('#usage').hide();
+  };
+
+
+  Base = function(projectId, pivotalKey) {
+    this.$projectId = projectId;
+    this.$pivotalKey = pivotalKey;
   };
   Base.prototype = {
     render: function() {},
@@ -34,30 +39,65 @@ function getQueryVariable(variable) {
   };
 
 
-  Project = function(projectId) {
+  Project = function() {
     Base.apply(this, arguments);
-    this.$projectId = projectId;
+    if (this.$projectId && this.$pivotalKey) {
+      Pivotwall.hideUsage();
+    };
+
+    this.$renderTarget = '#cards';
     this.$started;
     this.$finished;
     this.$rejected;
     this.$delivered;
     this.$name;
 
-    this.fetch();
+    this.schedule();
+  };
+  Project.prototype.schedule = function() {
+    var _this = this;
+    var updateInterval = Pivotwall.getQueryVariable('update_interval') || 10;
+    var renderInterval = Pivotwall.getQueryVariable('render_interval') || 10;
+
+    _this.fetch();
+    _this.render();
+
+    setInterval(function() {
+      _this.update()
+    }, updateInterval * 1000);
+    setInterval(function() {
+      _this.render()
+    }, renderInterval * 1000);
   };
   Project.prototype.render = function() {
-    $("#results").html( this.$name );
-    if (this.$started !== undefined) {
-      this.$started.render();
-    };
-    if (this.$finished !== undefined) {
-      this.$finished.render();
+    $("#project-name").html( this.$name );
+    $(this.$renderTarget).html("");
+
+    if (this.$rejected !== undefined) {
+      this.$rejected.render();
     };
     if (this.$delivered !== undefined) {
       this.$delivered.render();
     };
+    if (this.$finished !== undefined) {
+      this.$finished.render();
+    };
+    if (this.$started !== undefined) {
+      this.$started.render();
+    };
+  };
+  Project.prototype.update = function() {
     if (this.$rejected !== undefined) {
-      this.$rejected.render();
+      this.$rejected.fetch();
+    };
+    if (this.$delivered !== undefined) {
+      this.$delivered.fetch();
+    };
+    if (this.$finished !== undefined) {
+      this.$finished.fetch();
+    };
+    if (this.$started !== undefined) {
+      this.$started.fetch();
     };
   };
   Project.prototype.fetch = function() {
@@ -70,19 +110,17 @@ function getQueryVariable(variable) {
       },
       success: function(data) {
         _this.$name = data.name;
-        _this.$started = new Pivotwall.Stories(_this, "started", $('#started'));
-        _this.$finished = new Pivotwall.Stories(_this, "finished", $('#finished'));
-        _this.$delivered = new Pivotwall.Stories(_this, "delivered", $('#delivered'));
-        _this.$rejected = new Pivotwall.Stories(_this, "rejected", $('#rejected'));
-        _this.render();
+        _this.$started = new Pivotwall.Stories(_this, "started", _this.$renderTarget);
+        _this.$finished = new Pivotwall.Stories(_this, "finished", _this.$renderTarget);
+        _this.$delivered = new Pivotwall.Stories(_this, "delivered", _this.$renderTarget);
+        _this.$rejected = new Pivotwall.Stories(_this, "rejected", _this.$renderTarget);
       }
     });
   };
 
 
   Stories = function(project, state, renderTarget) {
-    Base.apply(this, arguments);
-    this.$project = project;
+    Base.apply(this, [project.$projectId, project.$pivotalKey]);
     this.$storyState = state;
     this.$renderTarget = renderTarget;
     this.$stories;
@@ -92,7 +130,8 @@ function getQueryVariable(variable) {
     var _this = this;
 
     $.ajax({
-      url: "https://www.pivotaltracker.com/services/v5/projects/" + _this.$project.$projectId + "/stories?with_state=" + _this.$storyState,
+      url: "https://www.pivotaltracker.com/services/v5/projects/" +
+        _this.$projectId + "/stories?with_state=" + _this.$storyState,
       headers: {
         "X-TrackerToken" : _this.$pivotalKey
       },
@@ -100,29 +139,29 @@ function getQueryVariable(variable) {
         _this.$stories = $.map(data, function(item, idx) {
           return new Pivotwall.Story(item);
         });
-        _this.$project.render();
       }
     });
   };
   Stories.prototype.render = function() {
     var _this = this;
     if (_this.$stories !== undefined) {
-      _this.$renderTarget.html("");
       $.map(_this.$stories, function(item, idx) {
         item.render(_this.$renderTarget);
       });
     };
   };
 
+
   Story = function(storyData) {
     this.$data = storyData;
   };
   Story.prototype.render = function(target) {
-    target.append(this.card());
+    $(target).append(this.card());
   };
   Story.prototype.card = function() {
+    var classes = this.$data.current_state + " " + this.$data.story_type;
     var newHtml = '' +
-      '<div class="card ' + this.$data.current_state + " " + this.$data.story_type + '">' +
+      '<div class="card ' + classes + '">' +
         //this.$data.name +
         '<span class="name">' + this.$data.name + '</span>' +
         '<span class="type">' + this.$data.story_type + '</span>' +
@@ -130,18 +169,18 @@ function getQueryVariable(variable) {
       '</div>';
     return newHtml;
   };
-  
+
+
   Pivotwall.Project = Project;
   Pivotwall.Story = Story;
   Pivotwall.Stories = Stories;
 }.call(this));
 
-(function() {
-  var key = getQueryVariable("pivotal_key")
-  var id = getQueryVariable("project_id")
+$(document).ready(function() {
+  var key = Pivotwall.getQueryVariable("pivotal_key");
+  var id = Pivotwall.getQueryVariable("project_id");
   if (key && id) {
-    var project = new window.Pivotwall.Project(id);
+    var project = new window.Pivotwall.Project(id, key);
   }
-//  project.onStart();
-}.call(this));
+});
 
