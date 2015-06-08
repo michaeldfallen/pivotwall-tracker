@@ -50,6 +50,7 @@ window.Pivotwall = {};
 
     this.$renderTarget = '#cards';
     this.$users;
+    this.$unstarted;
     this.$started;
     this.$finished;
     this.$rejected;
@@ -60,8 +61,8 @@ window.Pivotwall = {};
   };
   Project.prototype.schedule = function() {
     var _this = this;
-    var updateInterval = Pivotwall.getQueryVariable('update_interval') || 60;
-    var renderInterval = Pivotwall.getQueryVariable('render_interval') || 60;
+    var updateInterval = Pivotwall.getQueryVariable('update_interval') || 6;
+    var renderInterval = Pivotwall.getQueryVariable('render_interval') || 6;
 
     _this.fetch();
     _this.render();
@@ -89,8 +90,14 @@ window.Pivotwall = {};
     if (this.$started !== undefined) {
       this.$started.render(this.$users);
     };
+    if (this.$unstarted !== undefined) {
+      this.$unstarted.render(this.$users);
+    };
   };
   Project.prototype.update = function() {
+    if (this.$unstarted !== undefined) {
+      this.$unstarted.fetch();
+    };
     if (this.$rejected !== undefined) {
       this.$rejected.fetch();
     };
@@ -117,6 +124,7 @@ window.Pivotwall = {};
       },
       success: function(data) {
         _this.$name = data.name;
+        _this.$unstarted = new Pivotwall.Stories(_this, "planned", _this.$renderTarget);
         _this.$started = new Pivotwall.Stories(_this, "started", _this.$renderTarget);
         _this.$finished = new Pivotwall.Stories(_this, "finished", _this.$renderTarget);
         _this.$delivered = new Pivotwall.Stories(_this, "delivered", _this.$renderTarget);

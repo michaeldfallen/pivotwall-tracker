@@ -43,8 +43,7 @@ h1 {
   font-size: 2em;
   font-weight: bold;
   position: absolute;
-  bottom: 0;
-  left: 0;
+  bottom: 0;  left: 0;
   color: #fff;
   opacity: 0.3;
   z-index: 2;
@@ -173,8 +172,12 @@ input {
   font-size: 1.2em;
 }
 
-.card.started {
+.card.planned {
   background-color: #404646;
+}
+
+.card.started {
+  background-color: #d5b434;
 }
 
 .card.finished {
